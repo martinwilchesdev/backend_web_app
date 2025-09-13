@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h2><a href="/">Backend App</a></h2>
+        <nav>
+            <a href="/login">Log In</a>
+        </nav>
+    </header>
+
+    <main>
+        <form action="/register" method="POST">
+
+            <% errors.forEach(error => { %>
+                <p class="notice"><%= error %></p>
+            <%})%>
+
+            <fieldset>
+                <legend>Create an account</legend>
+                <label for="username"><small>Username</small></label>
+                <input type="text" name="username" id="username" autocomplete="off">
+
+                <label for="password"><small>Password</small></label>
+                <input type="password" name="password" id="password" autocomplete="off">
+
+                <br>
+
+                <button>Sign Up</button>
+            </fieldset>
+        </form>
+    </main>
+
+    <footer>
+        All rights reserved &copy;
+    </footer>
+</body>
+</html>
