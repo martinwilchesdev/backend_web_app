@@ -1,5 +1,24 @@
+// servidor de express
 const express = require('express')
-const app = express()
+
+// base de datos
+const db = require('better-sqlite3')('app.db') // abrir o crear (si no existe) el archivo de base de datos app.db
+db.pragma('journal_mode = WAL') // activar el modo de journaling de SQLite a WAL (en vez de bloquear todo el archivo de la BD, escribe un archivo de log y luego aplica los cambios)
+
+// configuracion de la base de datos
+
+// creacion de la tabla users
+const createTables = db.transaction(() => {
+    db.prepare(`
+    CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username STRING NOT NULL UNIQUE,
+        password STRING NOT NULL
+    )`).run()
+})
+createTables()
+
+const app = express() // aplicacion de express
 
 app.set('view engine', 'ejs')
 app.use(express.urlencoded({extended: false})) // permite acceder a los valores enviados por el usuario en un formulario a traves de req.body
@@ -40,6 +59,12 @@ app.post('/register', (req, res) => {
     if (req.body.password && req.body.password.length > 70) errors.push('Password must be at maximum of 70 characters')
 
     if (errors.length) return res.render('homepage', {errors})
+
+    // guardar el usuario en base de datos
+    const statement = db.prepare(`INSERT INTO users (username, password) VALUES (?, ?)`)
+    statement.run(req.body.username, req.body.password)
+
+    res.json({message: 'User created'})
 })
 
 app.listen(3000)

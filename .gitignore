@@ -1,1 +1,5 @@
 node_modules
+*.devdbrc
+*.db-shm
+*.db-wal
+*.db
