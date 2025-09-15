@@ -6,6 +6,7 @@
 - __bcrypt:__ encriptacion
 - __jsonwebtoken:__ tokens
 - __dotenv:__ variables de entorno
+- __cookie-parser:__ cookies de la aplicacion
 
 ## estilos
 

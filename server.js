@@ -1,8 +1,11 @@
 require('dotenv').config()
 
+// servidor de express
 const express = require('express')
+
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 
 // base de datos
 const db = require('better-sqlite3')('app.db') // abrir o crear (si no existe) el archivo de base de datos app.db
@@ -23,11 +26,23 @@ const app = express() // aplicacion de express
 
 app.set('view engine', 'ejs')
 app.use(express.urlencoded({extended: false})) // permite acceder a los valores enviados por el usuario en un formulario a traves de req.body
-app.use(express.static('public'))
+app.use(express.static('public')) // acceder a archivos estaticos desde los templates de ejs
+app.use(cookieParser())
 
-// middleware para configurar el valor por defecto del array errors utilizado en el homepage
+// middleware para configurar el valor por defecto del array errors utilizado en el template homepage
 app.use(function(req, res, next) {
     res.locals.errors = []
+
+    // decodificar cookie
+    try {
+        const decoded = jwt.verify(req.cookies.galleta, process.env.JWT_SECRET)
+        req.user = decoded
+    } catch(e) {
+        req.user = false
+    }
+
+    res.locals.user = req.user
+
     next()
 })
 
@@ -75,7 +90,6 @@ app.post('/register', async (req, res) => {
 
     // generar una al registrar un nuevo usuario
     const token = jwt.sign({
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
         username: user.username,
         userid: user.id},
     process.env.JWT_SECRET)
