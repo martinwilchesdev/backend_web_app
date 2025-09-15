@@ -1,22 +1,11 @@
-## packages
+## librerias de terceros
 
-### server
-
-```bash
-npm i express
-```
-
-### motor de plantillas
-
-```bash
-npm i ejs
-```
-
-### base de datos
-
-```bash
-npm i better-sqlite3
-```
+- __express:__ servidor
+- __ejs:__ motor de plantillas
+- __better-sqlite3:__ base de datos
+- __bcrypt:__ encriptacion
+- __jsonwebtoken:__ tokens
+- __dotenv:__ variables de entorno
 
 ## estilos
 

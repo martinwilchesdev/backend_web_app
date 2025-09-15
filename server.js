@@ -1,11 +1,12 @@
-// servidor de express
+require('dotenv').config()
+
 const express = require('express')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 // base de datos
 const db = require('better-sqlite3')('app.db') // abrir o crear (si no existe) el archivo de base de datos app.db
 db.pragma('journal_mode = WAL') // activar el modo de journaling de SQLite a WAL (en vez de bloquear todo el archivo de la BD, escribe un archivo de log y luego aplica los cambios)
-
-// configuracion de la base de datos
 
 // creacion de la tabla users
 const createTables = db.transaction(() => {
@@ -16,7 +17,7 @@ const createTables = db.transaction(() => {
         password STRING NOT NULL
     )`).run()
 })
-createTables()
+createTables() // invocar la funcion encargada de crear la tabla de usuarios
 
 const app = express() // aplicacion de express
 
@@ -24,7 +25,7 @@ app.set('view engine', 'ejs')
 app.use(express.urlencoded({extended: false})) // permite acceder a los valores enviados por el usuario en un formulario a traves de req.body
 app.use(express.static('public'))
 
-// middleware
+// middleware para configurar el valor por defecto del array errors utilizado en el homepage
 app.use(function(req, res, next) {
     res.locals.errors = []
     next()
@@ -35,10 +36,10 @@ app.get('/', (req, res) => {
 })
 
 app.get('/login', (req, res) => {
-    res.render('login')
+    res.render('login') // formulario de login
 })
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
     const errors = []
 
     // validar que los campos de registro sean de tipo string, en caso contrario vaciar los datos de registro del usuario
@@ -51,7 +52,7 @@ app.post('/register', (req, res) => {
     if (!req.body.username) errors.push('Username cannot be empty.')
     if (req.body.username && req.body.username.length < 3) errors.push('Username must be at least 3 characters long')
     if (req.body.username && req.body.username.length > 10) errors.push('Username must be at maximum of 10 characters')
-    if (req.body.username && !req.body.username.match(/^[a-zA-Z0-9]+$/)) errors.push('Username must be contain letters and numbers')
+    if (req.body.username && !req.body.username.match(/^[a-zA-Z0-9]+$/)) errors.push('Username must be contain letters and numbers only')
 
     // validacion de la contraseña
     if (!req.body.password) errors.push('Password cannot be empty.')
@@ -62,9 +63,31 @@ app.post('/register', (req, res) => {
 
     // guardar el usuario en base de datos
     const statement = db.prepare(`INSERT INTO users (username, password) VALUES (?, ?)`)
-    statement.run(req.body.username, req.body.password)
 
-    res.json({message: 'User created'})
+    const saltRounds = 10
+    const hashPassword = await bcrypt.hash(req.body.password, saltRounds) // encriptar contraseña antes de guardarla en base datos
+
+    // insertar el usuario en base de datos
+    const result = statement.run(req.body.username, hashPassword)
+
+    const resultStatement = db.prepare('SELECT * FROM users WHERE id = ?') // consulta para obtener la informacion del usuario previamente registrado
+    const user = resultStatement.get(result.lastInsertRowid) // ejecutar la consulta pasando como parametro el id del usuario registrado
+
+    // generar una al registrar un nuevo usuario
+    const token = jwt.sign({
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
+        username: user.username,
+        userid: user.id},
+    process.env.JWT_SECRET)
+
+    res.cookie('galleta', token, { // appCookit -> nombre // secret -> valor
+        httpOnly: true, // la cookie es accesible unicamente por el servidor web
+        secure: true, // marca la cookie para ser usada unica mente con HTTPS
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 // un dia
+    })
+
+    res.send('Registered!')
 })
 
 app.listen(3000)
