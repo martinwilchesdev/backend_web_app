@@ -1,18 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homepage</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<%- include('./includes/head.ejs') %>
 <body>
-    <header>
-        <h2><a href="/">Backend App</a></h2>
-        <nav>
-            <a href="/login">Log In</a>
-        </nav>
-    </header>
+    <%- include('./includes/header.ejs') %>
 
     <main>
         <form action="/register" method="POST">
@@ -36,8 +24,6 @@
         </form>
     </main>
 
-    <footer>
-        All rights reserved &copy;
-    </footer>
+    <%- include('./includes/footer.ejs') %>
 </body>
 </html>

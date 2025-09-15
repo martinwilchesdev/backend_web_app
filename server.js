@@ -33,8 +33,8 @@ app.use(cookieParser())
 app.use(function(req, res, next) {
     res.locals.errors = []
 
-    // decodificar cookie
     try {
+        // decodificar el valor de la cookie de autenticacion del usuario
         const decoded = jwt.verify(req.cookies.galleta, process.env.JWT_SECRET)
         req.user = decoded
     } catch(e) {
@@ -47,6 +47,10 @@ app.use(function(req, res, next) {
 })
 
 app.get('/', (req, res) => {
+    if (req.user) {
+        return res.render('dashboard')
+    }
+
     res.render('homepage')
 })
 
@@ -102,6 +106,11 @@ app.post('/register', async (req, res) => {
     })
 
     res.send('Registered!')
+})
+
+app.get('/logout', (req, res) => {
+    res.clearCookie('galleta') // eliminar la cookie de autenticacion
+    res.redirect('/') // rediriger al usuario la ruta raiz
 })
 
 app.listen(3000)
