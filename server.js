@@ -58,6 +58,39 @@ app.get('/login', (req, res) => {
     res.render('login') // formulario de login
 })
 
+app.post('/login', async (req, res) => {
+    let errors = []
+
+    // validar que los campos de login sean de tipo string, en caso contrario vaciar los datos de registro del usuario
+    if (typeof req.body.username !== 'string') req.body.username = ''
+    if (typeof req.body.password !== 'string') req.body.password = ''
+
+    if (req.body.username.trim() == '' || req.body.password.trim() == '') {
+        errors = ['Invalid username or password']
+    }
+
+    if (errors.length) return res.render('login', { errors })
+
+    // consultar el usuario en la base de datos
+    const statement = db.prepare('SELECT * FROM users WHERE username = ?')
+    const result = statement.get(req.body.username)
+
+    if (!result) {
+        errors = ['Credentials are wrong']
+        return res.render('login', { errors })
+    }
+
+    // validar credenciales de acceso
+    const verifyPassword = await bcrypt.compare(req.body.password, result.password)
+
+    if (!verifyPassword) {
+        errors = ['Credentials are wrong']
+        return res.render('login', { errors })
+    }
+
+    res.redirect('/')
+})
+
 app.post('/register', async (req, res) => {
     const errors = []
 
@@ -78,7 +111,7 @@ app.post('/register', async (req, res) => {
     if (req.body.password && req.body.password.length < 8) errors.push('Password must be at least 8 characters long')
     if (req.body.password && req.body.password.length > 70) errors.push('Password must be at maximum of 70 characters')
 
-    if (errors.length) return res.render('homepage', {errors})
+    if (errors.length) return res.render('homepage', { errors })
 
     // guardar el usuario en base de datos
     const statement = db.prepare(`INSERT INTO users (username, password) VALUES (?, ?)`)
@@ -98,14 +131,14 @@ app.post('/register', async (req, res) => {
         userid: user.id},
     process.env.JWT_SECRET)
 
-    res.cookie('galleta', token, { // appCookit -> nombre // secret -> valor
+    res.cookie('galleta', token, { // (a, b) // a -> propiedad // b -> valor
         httpOnly: true, // la cookie es accesible unicamente por el servidor web
         secure: true, // marca la cookie para ser usada unica mente con HTTPS
         sameSite: 'strict',
         maxAge: 1000 * 60 * 60 * 24 // un dia
     })
 
-    res.send('Registered!')
+    res.redirect('/')
 })
 
 app.get('/logout', (req, res) => {
