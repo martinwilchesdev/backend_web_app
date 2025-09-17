@@ -73,20 +73,34 @@ app.post('/login', async (req, res) => {
 
     // consultar el usuario en la base de datos
     const statement = db.prepare('SELECT * FROM users WHERE username = ?')
-    const result = statement.get(req.body.username)
+    const user = statement.get(req.body.username)
 
-    if (!result) {
-        errors = ['Credentials are wrong']
+    if (!user) {
+        errors = ['Invalid username or password']
         return res.render('login', { errors })
     }
 
     // validar credenciales de acceso
-    const verifyPassword = await bcrypt.compare(req.body.password, result.password)
+    const verifyPassword = await bcrypt.compare(req.body.password, user.password)
 
     if (!verifyPassword) {
         errors = ['Credentials are wrong']
         return res.render('login', { errors })
     }
+
+    // crear token de autenticacion
+    const token = jwt.sign({
+        username: user.username,
+        password: user.password
+    }, process.env.JWT_SECRET)
+
+    // agregar la cookie de autenticacion a la respuesta
+    res.cookie('galleta', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 // expira en una hora (milisegundos)
+    })
 
     res.redirect('/')
 })
@@ -135,7 +149,7 @@ app.post('/register', async (req, res) => {
         httpOnly: true, // la cookie es accesible unicamente por el servidor web
         secure: true, // marca la cookie para ser usada unica mente con HTTPS
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 60 * 24 // un dia
+        maxAge: 1000 * 60 * 60 // una hora
     })
 
     res.redirect('/')
