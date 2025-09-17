@@ -120,6 +120,12 @@ app.post('/register', async (req, res) => {
     if (req.body.username && req.body.username.length > 10) errors.push('Username must be at maximum of 10 characters')
     if (req.body.username && !req.body.username.match(/^[a-zA-Z0-9]+$/)) errors.push('Username must be contain letters and numbers only')
 
+    // validar si el username ya fue registrado
+    const usernameStatement = db.prepare('SELECT * FROM users WHERE username = ?')
+    const usernameValidation = usernameStatement.get(req.body.username)
+
+    if (usernameValidation) errors.push('The user is already taken')
+
     // validacion de la contraseña
     if (!req.body.password) errors.push('Password cannot be empty.')
     if (req.body.password && req.body.password.length < 8) errors.push('Password must be at least 8 characters long')
