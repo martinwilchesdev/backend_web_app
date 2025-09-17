@@ -1,0 +1,23 @@
+<%- include('./includes/head.ejs') %>
+<body>
+    <%- include('./includes/header.ejs') %>
+    <main>
+        <form action="/create-post" method="POST">
+            <fieldset>
+                <legend>Create post</legend>
+                <label for="title"><small>Title</small></label>
+                <input type="text" name="title" id="title" autocomplete="off">
+
+                <label for="content"><small>Content</small></label>
+                <textarea name="content" id="content"></textarea>
+
+                <br>
+
+                <button>Save</button>
+            </fieldset>
+        </form>
+    </main>
+
+    <%- include('./includes/footer.ejs') %>
+</body>
+</html>

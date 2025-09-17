@@ -166,4 +166,22 @@ app.get('/logout', (req, res) => {
     res.redirect('/') // rediriger al usuario la ruta raiz
 })
 
+// middleware para validar si un usuario se ha autenticado
+function checkAuth(req, res, next) {
+    if (req.user) return next()
+
+    res.redirect('/')
+}
+
+/**
+ * Antes de ejecutarse la logica de las siguientes 2 rutas, se ejecuta el middleware checkAuth, para validar si el usuario esta autenticado
+*/
+app.get('/create-post', checkAuth, (req, res) => {
+    res.render('create-post')
+})
+
+app.post('/create-post', checkAuth, (req, res) => {
+
+})
+
 app.listen(3000)
