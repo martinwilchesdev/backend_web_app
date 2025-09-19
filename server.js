@@ -6,6 +6,8 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
+const sanitizeHtml = require('sanitize-html')
+const { render } = require('ejs')
 
 // base de datos
 const db = require('better-sqlite3')('app.db') // abrir o crear (si no existe) el archivo de base de datos app.db
@@ -18,6 +20,16 @@ const createTables = db.transaction(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username STRING NOT NULL UNIQUE,
         password STRING NOT NULL
+    )`).run()
+
+    db.prepare(`
+    CREATE TABLE IF NOT EXISTS posts(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title STRING NOT NULL,
+        content STRING NOT NULL,
+        author_id INTEGER,
+        created_at TEXT,
+        FOREIGN KEY (author_id) REFERENCES users(id)
     )`).run()
 })
 createTables() // invocar la funcion encargada de crear la tabla de usuarios
@@ -143,7 +155,7 @@ app.post('/register', async (req, res) => {
     const result = statement.run(req.body.username, hashPassword)
 
     const resultStatement = db.prepare('SELECT * FROM users WHERE id = ?') // consulta para obtener la informacion del usuario previamente registrado
-    const user = resultStatement.get(result.lastInsertRowid) // ejecutar la consulta pasando como parametro el id del usuario registrado
+    const user = resultStatement.get(result.lastInsertRowid) // ejecutar la  consulta pasando como parametro el id del usuario registrado
 
     // generar una al registrar un nuevo usuario
     const token = jwt.sign({
@@ -174,14 +186,46 @@ function checkAuth(req, res, next) {
 }
 
 /**
- * Antes de ejecutarse la logica de las siguientes 2 rutas, se ejecuta el middleware checkAuth, para validar si el usuario esta autenticado
+ * Antes de acceder a las siguientes 2 rutas, se ejecuta el middleware checkAuth, para validar si el usuario esta autenticado
 */
 app.get('/create-post', checkAuth, (req, res) => {
     res.render('create-post')
 })
 
 app.post('/create-post', checkAuth, (req, res) => {
+    const errors = validationPostsData(req)
 
+    if (errors.length) return res.render('create-post', { errors })
+
+    const body = req.body
+
+    console.log(req.user)
+    return
+
+    const statement = db.prepare('INSERT INTO posts (title, content, author_id, created_at) values (?, ?, ?, ?)')
+    statement.run(body.title, body.content, 8, new Date().toISOString())
 })
+
+function validationPostsData(param) {
+    const errors = []
+
+    if (typeof param.body.title !== 'string') param.body.title = ''
+    if (typeof param.body.content !== 'string') param.body.content = ''
+
+    param.body.title = sanitizeHtml(param.body.title.trim(), {
+        allowedTags: [],
+        allowedAttributes: []
+    })
+
+    param.body.content = sanitizeHtml(param.body.content.trim(), {
+        allowedTags: [],
+        allowedAttributes: {}
+    })
+
+    if (!param.body.title) errors.push('The title is required')
+    if (!param.body.content) errors.push('The content is required')
+
+    return errors
+}
 
 app.listen(3000)

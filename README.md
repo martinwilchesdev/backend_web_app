@@ -7,6 +7,7 @@
 - __jsonwebtoken:__ tokens
 - __dotenv:__ variables de entorno
 - __cookie-parser:__ cookies de la aplicacion
+- __sanitize-html:__ sanitizar texto
 
 ## estilos
 

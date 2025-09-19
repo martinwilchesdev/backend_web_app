@@ -3,6 +3,11 @@
     <%- include('./includes/header.ejs') %>
     <main>
         <form action="/create-post" method="POST">
+
+            <% errors.forEach(error => { %>
+                <div class="notice"><%= error %></div>
+            <% }) %>
+
             <fieldset>
                 <legend>Create post</legend>
                 <label for="title"><small>Title</small></label>
